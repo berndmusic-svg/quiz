@@ -598,11 +598,49 @@ const rewardEl = document.getElementById("reward");
 const rewardTitleEl = document.getElementById("reward-title");
 const rewardGifEl = document.getElementById("reward-gif");
 const confettiEl = document.getElementById("confetti");
+const badgeEl = document.getElementById("badge");
+const matrixCanvas = document.getElementById("matrix-canvas");
 
 let quizQuestions = [];
 let currentIndex = 0;
 let score = 0;
 let selectedAnswer = null;
+
+let audioContext;
+
+function playTone(frequency, duration) {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+
+  oscillator.type = "sine";
+  oscillator.frequency.value = frequency;
+  gainNode.gain.value = 0.08;
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + duration);
+}
+
+function playCorrectSound() {
+  playTone(720, 0.12);
+  setTimeout(() => playTone(920, 0.12), 120);
+}
+
+function playWrongSound() {
+  playTone(220, 0.2);
+}
+
+function getBadge(scoreValue) {
+  if (scoreValue >= 9) return "Cyber Pro";
+  if (scoreValue >= 7) return "Security Scout";
+  if (scoreValue >= 5) return "Safety Starter";
+  return "Digital Rookie";
+}
 
 function shuffle(array) {
   return array
@@ -669,6 +707,9 @@ function selectAnswer(button, index) {
   if (index === current.answer) {
     score += 1;
     scoreEl.textContent = score;
+    playCorrectSound();
+  } else {
+    playWrongSound();
   }
 
   nextBtn.disabled = false;
@@ -676,6 +717,7 @@ function selectAnswer(button, index) {
 
 function showResults() {
   finalScoreEl.textContent = score.toString();
+  badgeEl.textContent = getBadge(score);
   const passed = score >= PASS_SCORE;
   const gifList = passed ? PASS_GIFS : FAIL_GIFS;
   const randomGif = gifList[Math.floor(Math.random() * gifList.length)];
@@ -690,6 +732,51 @@ function showResults() {
   showScreen(resultScreen);
 }
 
+function startMatrixAnimation() {
+  if (!matrixCanvas) {
+    return;
+  }
+
+  const ctx = matrixCanvas.getContext("2d");
+  const letters = "01SOVOTCYBER";
+  let width = window.innerWidth;
+  let height = window.innerHeight;
+  let columns = Math.floor(width / 16);
+  let drops = Array.from({ length: columns }, () => Math.random() * height);
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    matrixCanvas.width = width;
+    matrixCanvas.height = height;
+    columns = Math.floor(width / 16);
+    drops = Array.from({ length: columns }, () => Math.random() * height);
+  }
+
+  resize();
+  window.addEventListener("resize", resize);
+
+  function draw() {
+    ctx.fillStyle = "rgba(5, 10, 5, 0.15)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#33ff66";
+    ctx.font = "14px monospace";
+
+    for (let i = 0; i < drops.length; i += 1) {
+      const text = letters.charAt(Math.floor(Math.random() * letters.length));
+      ctx.fillText(text, i * 16, drops[i]);
+      if (drops[i] > height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i] += 16;
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
 function nextQuestion() {
   if (currentIndex < QUIZ_LENGTH - 1) {
     currentIndex += 1;
@@ -702,3 +789,4 @@ function nextQuestion() {
 startBtn.addEventListener("click", startQuiz);
 nextBtn.addEventListener("click", nextQuestion);
 restartBtn.addEventListener("click", () => showScreen(startScreen));
+startMatrixAnimation();
