@@ -635,6 +635,35 @@ function playWrongSound() {
   playTone(220, 0.2);
 }
 
+function playApplause() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  const duration = 1.2;
+  const bufferSize = audioContext.sampleRate * duration;
+  const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i += 1) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  }
+  const noise = audioContext.createBufferSource();
+  noise.buffer = buffer;
+  const gain = audioContext.createGain();
+  gain.gain.value = 0.12;
+  const filter = audioContext.createBiquadFilter();
+  filter.type = "highpass";
+  filter.frequency.value = 600;
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioContext.destination);
+  noise.start();
+}
+
+function playAah() {
+  playTone(260, 0.25);
+  setTimeout(() => playTone(220, 0.25), 180);
+}
+
 function getBadge(scoreValue) {
   if (scoreValue >= 9) return "Cyber Pro";
   if (scoreValue >= 7) return "Security Scout";
@@ -719,6 +748,11 @@ function showResults() {
   finalScoreEl.textContent = score.toString();
   badgeEl.textContent = getBadge(score);
   const passed = score >= PASS_SCORE;
+  if (passed) {
+    playApplause();
+  } else {
+    playAah();
+  }
   const gifList = passed ? PASS_GIFS : FAIL_GIFS;
   const randomGif = gifList[Math.floor(Math.random() * gifList.length)];
 
