@@ -604,6 +604,7 @@ const rewardTitleEl = document.getElementById("reward-title");
 const rewardGifEl = document.getElementById("reward-gif");
 const confettiEl = document.getElementById("confetti");
 const badgeEl = document.getElementById("badge");
+const studentDisplayEl = document.getElementById("student-display");
 const matrixCanvas = document.getElementById("matrix-canvas");
 
 let quizQuestions = [];
@@ -820,6 +821,11 @@ function selectAnswer(button, index) {
 
 function showResults() {
   finalScoreEl.textContent = score.toString();
+  if (studentDisplayEl) {
+    studentDisplayEl.textContent = studentId
+      ? `Leerlingnummer: ${studentId}`
+      : "";
+  }
   badgeEl.textContent = getBadge(score);
   const passed = score >= PASS_SCORE;
   if (passed) {

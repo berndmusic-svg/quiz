@@ -258,6 +258,12 @@ body {
   box-shadow: 0 0 16px rgba(51, 255, 102, 0.25);
 }
 
+.student-display {
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .confetti::before,
 .confetti::after {
   content: "";
