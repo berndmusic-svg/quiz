@@ -897,5 +897,18 @@ function nextQuestion() {
 
 startBtn.addEventListener("click", startQuiz);
 nextBtn.addEventListener("click", nextQuestion);
-restartBtn.addEventListener("click", () => showScreen(startScreen));
+restartBtn.addEventListener("click", () => {
+  showScreen(startScreen);
+  if (studentIdInput) {
+    studentIdInput.value = "";
+  }
+  if (studentClassInput) {
+    studentClassInput.value = "";
+  }
+  if (startMessageEl) {
+    startMessageEl.textContent = "";
+  }
+  studentId = "";
+  studentClass = "";
+});
 startMatrixAnimation();
