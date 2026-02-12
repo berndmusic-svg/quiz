@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SOVOT ICT QUIZ</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
   <canvas id="matrix-canvas" aria-hidden="true"></canvas>
@@ -19,6 +20,18 @@
     <section id="start-screen" class="card active">
       <h2>Ben jij klaar om de uitdaging aan te gaan?</h2>
       <p>Beantwoord 10 vragen. Elke vraag is 1 punt. Haal 7 punten of meer en verdien een lolly!</p>
+      <div class="form">
+        <label class="field">
+          <span>Leerlingnummer</span>
+          <input id="student-id" type="text" placeholder="Bijv. 12345" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Klas</span>
+          <input id="student-class" type="text" placeholder="Bijv. 2B" autocomplete="off" />
+        </label>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAACa_t-zp01YERULa"></div>
+        <p id="start-message" class="message"></p>
+      </div>
       <button id="start-btn" class="btn primary">Maak quiz</button>
     </section>
 

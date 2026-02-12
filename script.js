@@ -564,6 +564,8 @@ const QUESTION_POOL = [
 const QUIZ_LENGTH = 10;
 const PASS_SCORE = 7;
 
+const WORKER_URL = "";
+
 const PASS_GIFS = [
   "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGxnOW0xZXMxb2t6NWhoZGFpaDJzYXowdW43MXV5ZWdlNjJybGxudCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/o75ajIFH0QnQC3nCeD/giphy.gif",
   "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbWJxdjRvMDlocTFzY2pqanJ4ZmIyeXBxc2ZwMXJtemJ0c3g4NndyOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/7Wiozceem6Vt2eMFxO/giphy.gif",
@@ -587,6 +589,9 @@ const resultScreen = document.getElementById("result-screen");
 const startBtn = document.getElementById("start-btn");
 const nextBtn = document.getElementById("next-btn");
 const restartBtn = document.getElementById("restart-btn");
+const studentIdInput = document.getElementById("student-id");
+const studentClassInput = document.getElementById("student-class");
+const startMessageEl = document.getElementById("start-message");
 
 const questionText = document.getElementById("question-text");
 const answersEl = document.getElementById("answers");
@@ -605,6 +610,8 @@ let quizQuestions = [];
 let currentIndex = 0;
 let score = 0;
 let selectedAnswer = null;
+let studentId = "";
+let studentClass = "";
 
 let audioContext;
 
@@ -678,14 +685,81 @@ function shuffle(array) {
     .map(({ item }) => item);
 }
 
+async function checkStatus(id) {
+  const response = await fetch(
+    `${WORKER_URL}/status?leerlingnummer=${encodeURIComponent(id)}`,
+    { method: "GET" }
+  );
+  if (!response.ok) {
+    throw new Error("Status check failed");
+  }
+  const data = await response.json();
+  return Boolean(data.passed);
+}
+
+async function submitResult() {
+  if (!studentId || !studentClass) {
+    return;
+  }
+
+  const turnstileToken = document.querySelector(
+    "input[name='cf-turnstile-response']"
+  )?.value;
+  if (!turnstileToken) {
+    return;
+  }
+
+  try {
+    await fetch(`${WORKER_URL}/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        leerlingnummer: studentId,
+        klas: studentClass,
+        score,
+        turnstileToken
+      })
+    });
+  } catch (error) {
+    // negeer netwerkfouten
+  }
+}
+
 function startQuiz() {
-  quizQuestions = shuffle(QUESTION_POOL).slice(0, QUIZ_LENGTH);
-  currentIndex = 0;
-  score = 0;
-  selectedAnswer = null;
-  scoreEl.textContent = score;
-  showScreen(quizScreen);
-  renderQuestion();
+  studentId = studentIdInput.value.trim();
+  studentClass = studentClassInput.value.trim();
+  if (!studentId || !studentClass) {
+    startMessageEl.textContent = "Vul je leerlingnummer en klas in.";
+    return;
+  }
+
+  startBtn.disabled = true;
+  startMessageEl.textContent = "Controleren of je al geslaagd bent...";
+
+  checkStatus(studentId)
+    .then((passed) => {
+      if (passed) {
+        startMessageEl.textContent =
+          "Je hebt deze quiz al gehaald (≥7). Je kunt niet opnieuw starten.";
+        startBtn.disabled = false;
+        return;
+      }
+
+      startMessageEl.textContent = "";
+      quizQuestions = shuffle(QUESTION_POOL).slice(0, QUIZ_LENGTH);
+      currentIndex = 0;
+      score = 0;
+      selectedAnswer = null;
+      scoreEl.textContent = score;
+      showScreen(quizScreen);
+      renderQuestion();
+      startBtn.disabled = false;
+    })
+    .catch(() => {
+      startMessageEl.textContent =
+        "Kan de status niet controleren. Probeer het opnieuw.";
+      startBtn.disabled = false;
+    });
 }
 
 function showScreen(screen) {
@@ -753,6 +827,7 @@ function showResults() {
   } else {
     playAah();
   }
+  submitResult();
   const gifList = passed ? PASS_GIFS : FAIL_GIFS;
   const randomGif = gifList[Math.floor(Math.random() * gifList.length)];
 
